@@ -1,0 +1,41 @@
+name: cip
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Mapas Offline / Geoespacial
+  flutter_map: ^6.1.0 
+  latlong2: ^0.9.1
+  geojson_vi: ^2.0.0 
+
+  # Base de Datos Local Offline (Isar)
+  isar: ^3.1.0
+  isar_flutter_libs: ^3.1.0
+  path_provider: ^2.1.1 
+
+  # Gráficos
+  fl_chart: ^0.65.0
+
+  # Utilidades
+  intl: ^0.18.1 
+  
+  # *** SOLUCIÓN: Añadir Provider ***
+  provider: ^6.0.0 
+  # ********************************
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  isar_generator: ^3.1.0 # Necesario para Isar
+  build_runner: ^2.4.6 # Necesario para Isar
+
+flutter:
+  uses-material-design: true
