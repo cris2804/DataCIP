@@ -1,4 +1,4 @@
-import 'dart:math';
+// Removed unused import
 
 class CalculoService {
 
@@ -27,30 +27,33 @@ class CalculoService {
   }
 
   int calcularVicunasAlimentadas(double biomasaKg) {
-    final reqVicunaKgDia = (activeConfig['requerimiento_diario_vicuna_kg'] as num).toDouble();
-    final diasPeriodo = (activeConfig['dias_periodo'] as num).toInt();
-    final maxConsumoPorcentaje = (activeConfig['max_consumo_porcentaje'] as num).toDouble();
+    // Fórmula pedida: vicuñas = biomasa_disponible * 0.3 / (365 * IDMS)
+    // donde IDMS = requerimiento diario (kg MS/día)
+    const double factorUtilizacion = 0.30;
+    const int diasAnio = 365;
+    final idmsKgDia = (activeConfig['requerimiento_diario_vicuna_kg'] as num).toDouble();
 
-    // 1. Aplicar el límite de consumo (30%)
-    final biomasaParaVicunas = biomasaKg * maxConsumoPorcentaje;
+    if (idmsKgDia <= 0) return 0;
 
-    // 2. Calcular el requerimiento total del periodo
-    final requerimientoPeriodo = reqVicunaKgDia * diasPeriodo;
-    
-    if (requerimientoPeriodo <= 0) return 0;
-    
-    // vicunas_alimentadas = floor( biomasa_para_vicunas / requerimiento_periodo )
-    final vicunas = (biomasaParaVicunas / requerimientoPeriodo);
-    
-    return vicunas.floor(); // Aseguramos que sea entero truncando hacia abajo
+    final vicunas = (biomasaKg * factorUtilizacion) / (diasAnio * idmsKgDia);
+    return vicunas.floor();
   }
 
   // Función combinada para usar en BiomasaScreen
   Map<String, dynamic> calcularKpis(int cantidadParcelas) {
-    final biomasa = calcularBiomasaKg(cantidadParcelas);
+    // Recalcular PF total para exponerlo en los resultados
+    final areaParcela = (activeConfig['area_por_parcela_m2'] as num).toDouble();
+    final pesoFrescoM2Kg = (activeConfig['peso_fresco_m2_kg'] as num).toDouble();
+    final porcSeco = (activeConfig['porcentaje_peso_seco'] as num).toDouble();
+    final porcDig = (activeConfig['porcentaje_alimento_digerible'] as num).toDouble();
+
+    final pfTotalKg = areaParcela * pesoFrescoM2Kg * cantidadParcelas;
+    // Fórmula de biomasa según indicación: PF kg * dry% * digestible%
+    final biomasa = pfTotalKg * porcSeco * porcDig;
     final vicunas = calcularVicunasAlimentadas(biomasa);
     
     return {
+      'fresh_weight_kg': pfTotalKg,
       'biomasa_disponible_kg': biomasa,
       'vicunas_alimentadas': vicunas,
     };

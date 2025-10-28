@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
 import '../services/calculo_service.dart';
-// import '../providers/pasto_control_provider.dart';
+import 'package:cip/services/biomasa_service.dart';
+import 'package:cip/models/biomasa_dataset.dart';
 
 class BiomasaScreen extends StatefulWidget {
   final String zona;
@@ -15,9 +15,26 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
   final TextEditingController _controller = TextEditingController();
   Map<String, dynamic>? _lastKpis;
   String _message = '';
+  LugarBiomasa? _lugar;
+
+  Future<void> _loadLugar() async {
+    final ds = await BiomasaService.loadDataset();
+    final byLugar = ds.asByLugar();
+    final zl = widget.zona.toLowerCase();
+    final key = (zl.contains('chalhuani') || zl.contains('challhuani')) ? 'challhuani' : 'tambokarka';
+    setState(() {
+      _lugar = byLugar[key] ?? byLugar['tambokarka'];
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLugar();
+  }
 
   void _calcular() {
-    final int cantidad = int.tryParse(_controller.text) ?? 0;
+  final int cantidad = int.tryParse(_controller.text) ?? 0;
     if (cantidad <= 0) {
       setState(() {
         _lastKpis = null;
@@ -26,19 +43,27 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
       return;
     }
 
-    // En una app real, obtendrías la configuración activa del Provider
-    // Simulamos la configuración de Tambokarka
-    final Map<String, dynamic> configSimulada = {
-      'area_por_parcela_m2': 2500.0,
-      'peso_fresco_m2_kg': 0.166777778,
-      'porcentaje_peso_seco': 0.78,
-      'porcentaje_alimento_digerible': 0.77,
-      'requerimiento_diario_vicuna_kg': 1.0,
+    // Construir configuración desde el JSON cargado
+    final l = _lugar;
+    if (l == null) {
+      setState(() {
+        _lastKpis = null;
+        _message = 'No se pudo cargar los datos del lugar.';
+      });
+      return;
+    }
+
+    final Map<String, dynamic> config = {
+      'area_por_parcela_m2': l.areaPorParcelaM2.toDouble(),
+      'peso_fresco_m2_kg': l.freshWeightM2g / 1000.0, // g/m2 -> kg/m2
+      'porcentaje_peso_seco': l.dryWeightPct / 100.0,
+      'porcentaje_alimento_digerible': l.digestibleLeafPct / 100.0,
+      'requerimiento_diario_vicuna_kg': l.idmsKgMsDia, // IDMS como requerimiento diario
       'dias_periodo': 30,
       'max_consumo_porcentaje': 0.30,
     };
-    
-    final service = CalculoService(configSimulada);
+
+    final service = CalculoService(config);
     final kpis = service.calcularKpis(cantidad);
 
     setState(() {
@@ -47,41 +72,15 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
     });
   }
 
-  void _guardarSnapshot() {
-    if (_lastKpis == null) {
-      setState(() {
-        _message = 'Debe calcular la biomasa antes de guardar el snapshot.';
-      });
-      return;
-    }
-    
-    final int cantidad = int.tryParse(_controller.text) ?? 0;
-    // final provider = Provider.of<PastoControlProvider>(context, listen: false);
-    
-    // provider.saveSnapshot(Snapshot(
-    //   zona: widget.zona,
-    //   fecha: DateTime.now(),
-    //   cantidadParcelas: cantidad,
-    //   biomasaKg: _lastKpis!['biomasa_disponible_kg'],
-    //   vicunasAlimentadas: _lastKpis!['vicunas_alimentadas'],
-    //   notas: 'Cálculo manual de ${widget.zona}',
-    // ));
-
-    setState(() {
-      _message = 'Snapshot de biomasa de ${widget.zona} guardado con éxito.';
-    });
-  }
+  // Guardado de snapshot eliminado: no se requiere historial ni persistencia
 
   @override
   Widget build(BuildContext context) {
-    // Simulación de parámetros activos
-    const req = 1.0;
-    const dias = 30;
-    const maxConsumo = 30;
+  // Sólo se mostrará el cálculo; no se listan datos del JSON
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cálculo de Biomasa ($widget.zona)'),
+        title: Text('Cálculo de Biomasa (${widget.zona})'),
         backgroundColor: Colors.indigo,
       ),
       body: SingleChildScrollView(
@@ -89,6 +88,13 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // No mostrar datos del JSON; sólo un pequeño indicador mientras carga
+            if (_lugar == null)
+              const Center(child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: CircularProgressIndicator(),
+              )),
+            const SizedBox(height: 8),
             // --- Inputs y Cálculo ---
             Card(
               elevation: 4,
@@ -109,36 +115,19 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _calcular,
-                            icon: const Icon(Icons.bolt),
-                            label: const Text('Calcular'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.indigo,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                          ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _lugar == null ? null : _calcular,
+                        icon: const Icon(Icons.bolt),
+                        label: const Text('Calcular'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.indigo,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _lastKpis != null ? _guardarSnapshot : null,
-                            icon: const Icon(Icons.save),
-                            label: const Text('Guardar'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     if (_message.isNotEmpty)
                       Padding(
@@ -154,7 +143,11 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
                           children: [
                             const Text('Resultados:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                             ListTile(
-                              title: const Text('Biomasa Disponible Total (kg)'),
+                              title: const Text('Fresh weight total (kg)'),
+                              trailing: Text('${_lastKpis!['fresh_weight_kg'].toStringAsFixed(3)} kg', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                            ListTile(
+                              title: const Text('Biomasa disponible (kg)'),
                               trailing: Text('${_lastKpis!['biomasa_disponible_kg'].toStringAsFixed(3)} kg', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
                             ),
                             ListTile(
@@ -169,34 +162,12 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
               ),
             ),
             
-            const SizedBox(height: 20),
-            
-            // --- Parámetros Activos ---
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Parámetros Activos del Periodo', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ListTile(title: const Text('Req. Diario Vicuña (kg MS/día)'), trailing: Text('$req')),
-                    ListTile(title: const Text('Días del Periodo'), trailing: Text('$dias días')),
-                    ListTile(title: const Text('Límite de Consumo de Vicuñas'), trailing: Text('$maxConsumo%')),
-                  ],
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // --- Historial (Simulación) ---
-            const Text('Historial de Snapshots (Simulación)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            // Aquí iría el ListView.builder para mostrar el historial de la DB
+            // Se removieron parámetros e historial
           ],
         ),
       ),
     );
   }
+
+  // Eliminado: helper para filas de datos (no se muestran datos del JSON)
 }

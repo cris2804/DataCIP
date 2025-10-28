@@ -1,0 +1,32 @@
+{
+  "lugares": [
+    {
+      "lugar": "tambokarka",
+      "parcelas": 1306,
+      "parcelas_en_tratamiento": 0,
+      "parcelas_sin_tratamiento": 0,
+      "area_por_parcela_m2": 2500,
+      "fresh_weight_m2_g": 166.777778,
+      "fresh_weight_kg": 544529.4452,
+      "dry_weight_pct": 78.0,
+      "digestible_leaf_pct": 77.0,
+      "biomasa_disponible": 327421.9473,
+      "idms_kg_ms_dia": 0.8,
+      "cantidad_vicunas": 336
+    },
+    {
+      "lugar": "challhuani",
+      "parcelas": 1082,
+      "parcelas_en_tratamiento": 0,
+      "parcelas_sin_tratamiento": 0,
+      "area_por_parcela_m2": 2500,
+      "fresh_weight_m2_g": 166.777778,
+      "fresh_weight_kg": 451133.8895,
+      "dry_weight_pct": 70.13951405,
+      "digestible_leaf_pct": 70.183889,
+      "biomasa_disponible": 222078.0498,
+      "idms_kg_ms_dia": 0.8,
+      "cantidad_vicunas": 228
+    }
+  ]
+}

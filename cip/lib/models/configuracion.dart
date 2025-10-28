@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:isar/isar.dart';
 
 part 'configuracion.g.dart';
@@ -35,4 +36,3 @@ class Configuracion {
   }
 }
 // NOTA: Para usar json.decode/encode se requiere importar dart:convert
-// import 'dart:convert';
