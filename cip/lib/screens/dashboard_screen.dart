@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cip/services/biomasa_service.dart';
 import 'package:cip/models/biomasa_dataset.dart';
+import 'package:fl_chart/fl_chart.dart';
 // import 'package:provider/provider.dart';
 // import 'package:fl_chart/fl_chart.dart'; // Para gráficos
 
@@ -30,8 +31,20 @@ class DashboardScreen extends StatelessWidget {
           if (snapshot.hasData) {
             final byLugar = snapshot.data!.asByLugar();
             final zl = zona.toLowerCase();
-            final key = (zl.contains('chalhuani') || zl.contains('challhuani')) ? 'challhuani' : 'tambokarka';
-            lugarData = byLugar[key] ?? byLugar['tambokarka'];
+            // Resolver alias de zona: tambokarka, challapalca/challhuani/variantes
+            String key = 'tambokarka';
+            if (byLugar.containsKey(zl)) {
+              key = zl;
+            } else if (zl.contains('chal')) {
+              if (byLugar.containsKey('challapalca')) {
+                key = 'challapalca';
+              } else if (byLugar.containsKey('challhuani')) {
+                key = 'challhuani';
+              } else if (byLugar.containsKey('chalhuani')) {
+                key = 'chalhuani';
+              }
+            }
+            lugarData = byLugar[key] ?? byLugar.values.first;
           }
           return SingleChildScrollView(
             padding: contentPadding,
@@ -39,7 +52,7 @@ class DashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
             // --- 1. Diseño tipo mockup: tarjeta superior con imagen de vicuña y fila de 3 cuadros coloreados ---
-            // Tarjeta superior: Vicuñas alimentadas por año + imagen
+            // Tarjeta superior: Cantidad de Vicuñas (desde JSON) + imagen
             Card(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 3,
@@ -54,19 +67,18 @@ class DashboardScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text('vicuñas alimentadas por año', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          const Text('Cantidad de vicuñas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 8),
                           Builder(
                             builder: (_) {
                               if (lugarData == null) {
                                 return const Text('-', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.indigo));
                               }
-                              final alimentadas = ((lugarData.biomasaDisponible * 0.3) / (lugarData.idmsKgMsDia * 365)).round();
-                              return Text('$alimentadas', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.indigo));
+                              return Text('${lugarData.cantidadVicunas}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.indigo));
                             },
                           ),
                           if (lugarData != null)
-                            Text('Vicuñas actuales: ${lugarData.cantidadVicunas}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                            Text('Fuente: JSON', style: const TextStyle(fontSize: 12, color: Colors.black54)),
                         ],
                       ),
                     ),
@@ -172,28 +184,30 @@ class DashboardScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
             
-            // --- 2. Gráfico de Dona/Pie (Simulación) ---
-            const Text('Progreso de Restauración (100% Base)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            // --- 2. Gráfico de Barras: Forraje Potencial vs. Disponible ---
+            const Text('Forraje (kg) Potencial vs. Disponible', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             Container(
-              height: 300,
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              // child: PieChart(...), // Aquí iría el widget fl_chart
-              child: Center(
-                child: Text('Gráfico de Dona aquí (Disponible vs. Pendiente)'),
-              ),
+              height: 260,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: lugarData == null
+                  ? const Center(child: Text('Sin datos'))
+                  : _buildForrajeBarChart(lugarData),
             ),
+            const SizedBox(height: 6),
+            const Text('Forraje potencial: Biomasa del JSON (kg). Forraje disponible inicial: 0 kg (pastizales degradados).', style: TextStyle(fontSize: 12, color: Colors.black54)),
             
             const SizedBox(height: 20),
 
-            // --- 3. Gráfico de Historial (Simulación) ---
-            const Text('Historial de Biomasa y Vicuñas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            // --- 3. Gráfico Circular: Progreso de restauración de pastizales ---
+            const Text('Progreso de restauración de pastizales', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             Container(
-              height: 300,
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              // child: LineChart(...), // Aquí iría el widget fl_chart
-              child: Center(
-                child: Text('Gráfico de Línea aquí (Biomasa/Vicuñas por Snapshot)'),
-              ),
+              height: 280,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: lugarData == null
+                  ? const Center(child: Text('Sin datos'))
+                  : _buildRestauracionPie(lugarData),
             ),
               ],
             ),
@@ -231,6 +245,65 @@ class DashboardScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // --- Charts helpers ---
+  Widget _buildForrajeBarChart(LugarBiomasa l) {
+    // Potencial = biomasa del JSON
+    final double potencialKg = l.biomasaDisponible;
+    // Disponible inicial = 0, pues todos los pastizales están degradados
+    final double disponibleKg = 0.0;
+    final maxY = (potencialKg > disponibleKg ? potencialKg : disponibleKg) * 1.2;
+
+    Widget bottomTitle(double value, TitleMeta meta) {
+      String text = '';
+      if (value == 0) text = 'Potencial';
+      if (value == 1) text = 'Disponible';
+      return SideTitleWidget(
+        axisSide: meta.axisSide,
+        space: 6,
+        child: Text(text, style: const TextStyle(fontSize: 12)),
+      );
+    }
+
+    return BarChart(
+      BarChartData(
+        maxY: maxY == 0 ? 1 : maxY,
+        alignment: BarChartAlignment.spaceAround,
+        barTouchData: BarTouchData(enabled: true),
+        titlesData: FlTitlesData(
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: bottomTitle)),
+          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
+        ),
+        gridData: const FlGridData(show: true),
+        borderData: FlBorderData(show: false),
+        barGroups: [
+          BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: potencialKg, color: Colors.blue, width: 24)]),
+          BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: disponibleKg, color: Colors.green, width: 24)]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRestauracionPie(LugarBiomasa l) {
+    final enTrat = l.parcelasEnTratamiento;
+    final degrad = l.parcelasSinTratamiento;
+    final resta = (l.parcelas - enTrat - degrad);
+    final restaurada = resta < 0 ? 0 : resta;
+
+    return PieChart(
+      PieChartData(
+        sectionsSpace: 2,
+        centerSpaceRadius: 0,
+        sections: [
+          PieChartSectionData(value: restaurada.toDouble(), title: 'Restaurada', color: Colors.green, titleStyle: const TextStyle(color: Colors.white, fontSize: 12)),
+          PieChartSectionData(value: enTrat.toDouble(), title: 'Tratamiento', color: Colors.amber, titleStyle: const TextStyle(color: Colors.white, fontSize: 12)),
+          PieChartSectionData(value: degrad.toDouble(), title: 'Degradado', color: Colors.red, titleStyle: const TextStyle(color: Colors.white, fontSize: 12)),
+        ],
       ),
     );
   }
