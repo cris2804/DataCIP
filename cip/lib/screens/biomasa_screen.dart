@@ -21,7 +21,7 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
     final ds = await BiomasaService.loadDataset();
     final byLugar = ds.asByLugar();
     final zl = widget.zona.toLowerCase();
-    final key = (zl.contains('chalhuani') || zl.contains('challhuani')) ? 'challhuani' : 'tambokarka';
+    final key = (zl.contains('challhuani') || zl.contains('challhuani')) ? 'challhuani' : 'tambokarka';
     setState(() {
       _lugar = byLugar[key] ?? byLugar['tambokarka'];
     });

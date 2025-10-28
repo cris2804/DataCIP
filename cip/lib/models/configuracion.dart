@@ -17,20 +17,20 @@ class Configuracion {
   
   // Simplificamos: Guardamos la configuración de ambas zonas juntas en JSON (string)
   String tambokarkaJson;
-  String chalhuaniJson;
+  String challhuaniJson;
 
   Configuracion({
     this.pin = '1234',
     required this.tambokarkaJson,
-    required this.chalhuaniJson,
+    required this.challhuaniJson,
   });
 
   // Getter para obtener el objeto de configuración de la zona activa
   Map<String, dynamic> getZoneConfig(String zoneName) {
     if (zoneName == 'Tambokarka') {
       return Map<String, dynamic>.from(json.decode(tambokarkaJson));
-    } else if (zoneName == 'Chalhuani') {
-      return Map<String, dynamic>.from(json.decode(chalhuaniJson));
+    } else if (zoneName == 'Challhuani') {
+      return Map<String, dynamic>.from(json.decode(challhuaniJson));
     }
     return {};
   }

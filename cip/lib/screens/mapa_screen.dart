@@ -1,233 +1,255 @@
-import 'dart:convert';
-import 'dart:math' as math;
-
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:cip/services/parcela_state_service.dart';
+import 'package:cip/models/parcela_model.dart';
 
-class MapaScreen extends StatefulWidget {
+// Provider para el estado local de la UI del mapa (parcela seleccionada)
+class SelectedParcelProvider extends ChangeNotifier {
+  String? _selectedParcelId;
+  String? get selectedParcelId => _selectedParcelId;
+
+  void selectParcel(String? parcelId) {
+    if (_selectedParcelId != parcelId) {
+      _selectedParcelId = parcelId;
+      notifyListeners();
+    }
+  }
+}
+
+class MapaScreen extends StatelessWidget {
   final String zona;
-
   const MapaScreen({super.key, required this.zona});
 
   @override
-  State<MapaScreen> createState() => _MapaScreenState();
-}
-
-class _MapaScreenState extends State<MapaScreen> {
-  List<Polygon> _polygons = [];
-  List<Polygon> _rectangles = [];
-  LatLng _center = LatLng(-14.5463, -69.7837); // valor por defecto cercano a tu GeoJSON
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadGeoJson();
-  }
-
-  Future<void> _loadGeoJson() async {
-    try {
-      final raw = await rootBundle.loadString('assets/data/parcelas.json');
-      final Map<String, dynamic> data = jsonDecode(raw);
-      final features = data['features'] as List<dynamic>? ?? [];
-
-      final List<Polygon> polygons = [];
-      final List<Polygon> rectangles = [];
-
-      for (final f in features) {
-        final geom = f['geometry'] as Map<String, dynamic>?;
-        if (geom == null) continue;
-        final type = geom['type'];
-        if (type == 'Polygon') {
-          final coords = geom['coordinates'] as List<dynamic>;
-          if (coords.isEmpty) continue;
-          // Usamos el primer anillo
-          final ring = coords[0] as List<dynamic>;
-          final List<LatLng> latlngs = [];
-          double? minLat, minLng, maxLat, maxLng;
-
-          for (final pair in ring) {
-            if (pair is List && pair.length >= 2) {
-              final double lon = (pair[0] as num).toDouble();
-              final double lat = (pair[1] as num).toDouble();
-              latlngs.add(LatLng(lat, lon));
-
-              minLat = (minLat == null) ? lat : (lat < minLat ? lat : minLat);
-              minLng = (minLng == null) ? lon : (lon < minLng ? lon : minLng);
-              maxLat = (maxLat == null) ? lat : (lat > maxLat ? lat : maxLat);
-              maxLng = (maxLng == null) ? lon : (lon > maxLng ? lon : maxLng);
-            }
-          }
-
-          if (latlngs.isNotEmpty) {
-            polygons.add(
-              Polygon(
-                points: latlngs,
-                borderColor: Colors.green.shade700,
-                color: Colors.green.withOpacity(0.2),
-                borderStrokeWidth: 2.0,
-              ),
-            );
-
-            if (minLat != null && minLng != null && maxLat != null && maxLng != null) {
-              final rect = [
-                LatLng(minLat, minLng),
-                LatLng(minLat, maxLng),
-                LatLng(maxLat, maxLng),
-                LatLng(maxLat, minLng),
-              ];
-              rectangles.add(
-                Polygon(
-                  points: rect,
-                  borderColor: Colors.red.shade700,
-                  color: Colors.transparent,
-                  borderStrokeWidth: 2.0,
-                ),
-              );
-
-              // Generar malla de celdas de 50x50 metros dentro del polígono
-              const double cellSizeMeters = 50.0;
-              final parcels = _generateGridParcels(
-                minLat: minLat,
-                minLng: minLng,
-                maxLat: maxLat,
-                maxLng: maxLng,
-                cellSizeMeters: cellSizeMeters,
-                polygonPts: latlngs,
-              );
-
-              for (final p in parcels) {
-                // usar color semitransparente para las parcelas
-                polygons.add(
-                  Polygon(
-                    points: p,
-                    borderColor: Colors.blue.shade800,
-                    color: Colors.blue.withOpacity(0.25),
-                    borderStrokeWidth: 0.5,
-                  ),
-                );
-              }
-
-              // Ajustar centro al primer feature si estamos en estado inicial
-              if (mounted && _loading) {
-                _center = LatLng((minLat + maxLat) / 2.0, (minLng + maxLng) / 2.0);
-              }
-            }
-          }
-        }
-      }
-
-      setState(() {
-        _polygons = polygons;
-        _rectangles = rectangles;
-        _loading = false;
-      });
-    } catch (e) {
-      // Si falla, mostramos un mensaje y dejamos _loading false
-      debugPrint('Error cargando GeoJSON: $e');
-      setState(() => _loading = false);
-    }
-  }
-
-  // Genera una lista de rectángulos (cada uno como List<LatLng>) de tamaño aproximado cellSizeMeters x cellSizeMeters
-  // y devuelve solo aquellos cuyo centro cae dentro del polígono original.
-  List<List<LatLng>> _generateGridParcels({
-    required double minLat,
-    required double minLng,
-    required double maxLat,
-    required double maxLng,
-    required double cellSizeMeters,
-    required List<LatLng> polygonPts,
-  }) {
-    // Aproximación: 1 grado lat ≈ 111320 metros
-    const double metersPerDegLat = 111320.0;
-
-    final List<List<LatLng>> parcels = [];
-
-    // Altura en grados para una celda de cellSizeMeters
-    final double dLat = cellSizeMeters / metersPerDegLat;
-
-    // Para longitud necesitamos ajustar por latitud: meters per deg lon = metersPerDegLat * cos(lat)
-    // Usaremos la latitud media del bounding box para calcular dLon
-    
-    // Iterar filas y columnas
-    for (double lat = minLat; lat < maxLat; lat += dLat) {
-      // recalcular dLon para la lat actual para mayor precisión
-  final double metersPerDegLon = metersPerDegLat * (math.cos(lat * math.pi / 180.0));
-      final double dLon = cellSizeMeters / metersPerDegLon;
-
-      for (double lon = minLng; lon < maxLng; lon += dLon) {
-        final List<LatLng> cell = [
-          LatLng(lat, lon),
-          LatLng(lat, lon + dLon),
-          LatLng(lat + dLat, lon + dLon),
-          LatLng(lat + dLat, lon),
-        ];
-
-        // centro de la celda
-        final LatLng center = LatLng(lat + dLat / 2.0, lon + dLon / 2.0);
-
-        if (_pointInPolygon(center, polygonPts)) {
-          parcels.add(cell);
-        }
-      }
-    }
-
-    return parcels;
-  }
-
-  // Test de punto-en-polígono: algoritmo ray-casting
-  bool _pointInPolygon(LatLng point, List<LatLng> polygon) {
-    final int n = polygon.length;
-    bool inside = false;
-    for (int i = 0, j = n - 1; i < n; j = i++) {
-      final double xi = polygon[i].longitude, yi = polygon[i].latitude;
-      final double xj = polygon[j].longitude, yj = polygon[j].latitude;
-
-      final bool intersect = ((yi > point.latitude) != (yj > point.latitude)) &&
-          (point.longitude < (xj - xi) * (point.latitude - yi) / (yj - yi + 0.0) + xi);
-      if (intersect) inside = !inside;
-    }
-    return inside;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Mapa y Edición (${widget.zona})'),
-        backgroundColor: Colors.indigo,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: () {
-              // Lógica para exportar GeoJSON actualizado
-            },
-            tooltip: 'Exportar GeoJSON',
-          ),
-        ],
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : FlutterMap(
-              options: MapOptions(
-                center: _center,
-                zoom: 12.0,
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  subdomains: const ['a', 'b', 'c'],
-                  userAgentPackageName: 'com.example.cip',
-                ),
-                if (_polygons.isNotEmpty)
-                  PolygonLayer(polygons: _polygons),
-                if (_rectangles.isNotEmpty)
-                  PolygonLayer(polygons: _rectangles),
-              ],
-            ),
+    // Este provider es local para esta pantalla, para manejar la selección
+    return ChangeNotifierProvider(
+      create: (_) => SelectedParcelProvider(),
+      child: _MapaScreenContent(zona: zona),
     );
   }
 }
+
+class _MapaScreenContent extends StatefulWidget {
+  final String zona;
+  const _MapaScreenContent({required this.zona});
+
+  @override
+  State<_MapaScreenContent> createState() => _MapaScreenContentState();
+}
+
+class _MapaScreenContentState extends State<_MapaScreenContent> {
+  final MapController _mapController = MapController();
+  final ItemScrollController _itemScrollController = ItemScrollController();
+
+  // --- Lógica de Interacción ---
+
+  void _onMapTap(TapPosition pos, LatLng latLng) {
+    final parcelaService = context.read<ParcelaStateService>();
+    final selectedProvider = context.read<SelectedParcelProvider>();
+
+    // Buscar la parcela presionada (de la última a la primera)
+    final tappedParcel = parcelaService.parcels.lastWhere(
+      (p) => _pointInPolygon(latLng, p.polygon.points),
+      orElse: () => parcelaService.parcels.firstWhere((p) => false, orElse: () => null as Parcela),
+    );
+
+    if (tappedParcel != null) {
+      // 1. Seleccionar la parcela
+      selectedProvider.selectParcel(tappedParcel.id);
+      // 2. Mover la lista a esa parcela
+      final index = parcelaService.parcels.indexWhere((p) => p.id == tappedParcel.id);
+      if (index != -1) {
+        _itemScrollController.scrollTo(index: index, duration: const Duration(milliseconds: 500), curve: Curves.easeInOutCubic);
+      }
+      // 3. Mostrar diálogo para cambiar estado
+      _showStatusChangeDialog(tappedParcel);
+    }
+  }
+
+  bool _pointInPolygon(LatLng point, List<LatLng> polygon) {
+    int intersectCount = 0;
+    for (int j = 0; j < polygon.length - 1; j++) {
+      if (_rayCastIntersect(point, polygon[j], polygon[j + 1])) {
+        intersectCount++;
+      }
+    }
+    return (intersectCount % 2) == 1; // odd = inside, even = outside
+  }
+
+  bool _rayCastIntersect(LatLng tap, LatLng vertA, LatLng vertB) {
+    double aY = vertA.latitude;
+    double bY = vertB.latitude;
+    double aX = vertA.longitude;
+    double bX = vertB.longitude;
+    double pY = tap.latitude;
+    double pX = tap.longitude;
+
+    if ((aY > pY && bY > pY) || (aY < pY && bY < pY) || (aX < pX && bX < pX)) {
+      return false;
+    }
+
+    double m = (aY - bY) / (aX - bX);
+    double bee = (-aX) * m + aY;
+    double x = (pY - bee) / m;
+
+    return x > pX;
+  }
+
+  void _showStatusChangeDialog(Parcela parcela) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Cambiar Estado de Parcela ${parcela.id}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: ParcelStatus.values.map((status) {
+              return ListTile(
+                title: Text(_statusToString(status)),
+                leading: Radio<ParcelStatus>(
+                  value: status,
+                  groupValue: parcela.status,
+                  onChanged: (ParcelStatus? value) {
+                    if (value != null) {
+                      context.read<ParcelaStateService>().updateParcelStatus(parcela.id, value);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                onTap: () {
+                   context.read<ParcelaStateService>().updateParcelStatus(parcela.id, status);
+                   Navigator.of(context).pop();
+                },
+              );
+            }).toList(),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+          ],
+        );
+      },
+    );
+  }
+
+  String _statusToString(ParcelStatus status) {
+    switch (status) {
+      case ParcelStatus.disponible:
+        return 'Disponible';
+      case ParcelStatus.enTratamiento:
+        return 'En Tratamiento';
+      case ParcelStatus.sinTratamiento:
+        return 'Degradado';
+    }
+  }
+
+  Color _getColorForStatus(ParcelStatus status) {
+    switch (status) {
+      case ParcelStatus.disponible:
+        return Colors.green;
+      case ParcelStatus.enTratamiento:
+        return Colors.amber;
+      case ParcelStatus.sinTratamiento:
+        return Colors.red;
+    }
+  }
+
+  // --- Widgets de Construcción ---
+
+  @override
+  Widget build(BuildContext context) {
+    final parcelaService = context.watch<ParcelaStateService>();
+
+    if (parcelaService.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (parcelaService.error != null) {
+      return Center(child: Text(parcelaService.error!, style: const TextStyle(color: Colors.red)));
+    }
+
+    return Column(
+      children: [
+        Expanded(flex: 1, child: _buildMap(context, parcelaService)),
+        Expanded(flex: 1, child: _buildParcelList(context, parcelaService)),
+      ],
+    );
+  }
+
+  Widget _buildMap(BuildContext context, ParcelaStateService parcelaService) {
+    final selectedId = context.watch<SelectedParcelProvider>().selectedParcelId;
+
+    List<Polygon> polygonsToDraw = [if (parcelaService.boundary != null) parcelaService.boundary!];
+
+    for (var parcela in parcelaService.parcels) {
+      final isSelected = parcela.id == selectedId;
+      
+      Color statusColor;
+      switch (parcela.status) {
+        case ParcelStatus.disponible:
+          statusColor = Colors.green;
+          break;
+        case ParcelStatus.enTratamiento:
+          statusColor = Colors.yellow;
+          break;
+        case ParcelStatus.sinTratamiento:
+          statusColor = Colors.red;
+          break;
+      }
+
+      polygonsToDraw.add(Polygon(
+        points: parcela.polygon.points,
+        color: Colors.transparent, // Step 1: No fill, just testing borders
+        borderStrokeWidth: isSelected ? 5.0 : 2.0, // Thicker borders
+        borderColor: isSelected ? Colors.white : statusColor, // Border color now reflects status
+      ));
+    }
+
+    // Create a key that is guaranteed to change when the status of any parcel changes.
+    final String layerKey = parcelaService.parcels.map((p) => p.status.index).join();
+
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        center: const LatLng(-14.56, -69.79),
+        zoom: 12.0,
+        onTap: _onMapTap,
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          subdomains: const ['a', 'b', 'c'],
+        ),
+        PolygonLayer(key: ValueKey(layerKey), polygons: polygonsToDraw),
+      ],
+    );
+  }
+
+  Widget _buildParcelList(BuildContext context, ParcelaStateService parcelaService) {
+    final selectedProvider = context.watch<SelectedParcelProvider>();
+
+    return ScrollablePositionedList.builder(
+      itemScrollController: _itemScrollController,
+      itemCount: parcelaService.parcels.length,
+      itemBuilder: (context, index) {
+        final parcela = parcelaService.parcels[index];
+        final isSelected = parcela.id == selectedProvider.selectedParcelId;
+        return ListTile(
+          tileColor: isSelected ? Colors.blue.withOpacity(0.2) : null,
+          title: Text('Parcela ID: ${parcela.properties['FID']}'),
+          subtitle: Text('Estado: ${_statusToString(parcela.status)}'),
+          trailing: Icon(Icons.circle, color: _getColorForStatus(parcela.status).withOpacity(1)),
+          onTap: () {
+            context.read<SelectedParcelProvider>().selectParcel(parcela.id);
+            _showStatusChangeDialog(parcela);
+          },
+        );
+      },
+    );
+  }
+}
+
+// Se necesita agregar la dependencia `scrollable_positioned_list` a pubspec.yaml

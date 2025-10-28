@@ -17,9 +17,9 @@ const ConfiguracionSchema = CollectionSchema(
   name: r'Configuracion',
   id: 5910711714536764601,
   properties: {
-    r'chalhuaniJson': PropertySchema(
+    r'challhuaniJson': PropertySchema(
       id: 0,
-      name: r'chalhuaniJson',
+      name: r'challhuaniJson',
       type: IsarType.string,
     ),
     r'pin': PropertySchema(
@@ -53,7 +53,7 @@ int _configuracionEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
-  bytesCount += 3 + object.chalhuaniJson.length * 3;
+  bytesCount += 3 + object.challhuaniJson.length * 3;
   bytesCount += 3 + object.pin.length * 3;
   bytesCount += 3 + object.tambokarkaJson.length * 3;
   return bytesCount;
@@ -65,7 +65,7 @@ void _configuracionSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.chalhuaniJson);
+  writer.writeString(offsets[0], object.challhuaniJson);
   writer.writeString(offsets[1], object.pin);
   writer.writeString(offsets[2], object.tambokarkaJson);
 }
@@ -77,7 +77,7 @@ Configuracion _configuracionDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Configuracion(
-    chalhuaniJson: reader.readString(offsets[0]),
+    challhuaniJson: reader.readString(offsets[0]),
     pin: reader.readStringOrNull(offsets[1]) ?? '1234',
     tambokarkaJson: reader.readString(offsets[2]),
   );
@@ -199,13 +199,13 @@ extension ConfiguracionQueryWhere
 extension ConfiguracionQueryFilter
     on QueryBuilder<Configuracion, Configuracion, QFilterCondition> {
   QueryBuilder<Configuracion, Configuracion, QAfterFilterCondition>
-      chalhuaniJsonEqualTo(
+      challhuaniJsonEqualTo(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'chalhuaniJson',
+        property: r'challhuaniJson',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -213,7 +213,7 @@ extension ConfiguracionQueryFilter
   }
 
   QueryBuilder<Configuracion, Configuracion, QAfterFilterCondition>
-      chalhuaniJsonGreaterThan(
+      challhuaniJsonGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -221,7 +221,7 @@ extension ConfiguracionQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
-        property: r'chalhuaniJson',
+        property: r'challhuaniJson',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -229,7 +229,7 @@ extension ConfiguracionQueryFilter
   }
 
   QueryBuilder<Configuracion, Configuracion, QAfterFilterCondition>
-      chalhuaniJsonLessThan(
+      challhuaniJsonLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -237,7 +237,7 @@ extension ConfiguracionQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
-        property: r'chalhuaniJson',
+        property: r'challhuaniJson',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -245,7 +245,7 @@ extension ConfiguracionQueryFilter
   }
 
   QueryBuilder<Configuracion, Configuracion, QAfterFilterCondition>
-      chalhuaniJsonBetween(
+      challhuaniJsonBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -254,7 +254,7 @@ extension ConfiguracionQueryFilter
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
-        property: r'chalhuaniJson',
+        property: r'challhuaniJson',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -265,13 +265,13 @@ extension ConfiguracionQueryFilter
   }
 
   QueryBuilder<Configuracion, Configuracion, QAfterFilterCondition>
-      chalhuaniJsonStartsWith(
+      challhuaniJsonStartsWith(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'chalhuaniJson',
+        property: r'challhuaniJson',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -279,13 +279,13 @@ extension ConfiguracionQueryFilter
   }
 
   QueryBuilder<Configuracion, Configuracion, QAfterFilterCondition>
-      chalhuaniJsonEndsWith(
+      challhuaniJsonEndsWith(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'chalhuaniJson',
+        property: r'challhuaniJson',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -293,10 +293,10 @@ extension ConfiguracionQueryFilter
   }
 
   QueryBuilder<Configuracion, Configuracion, QAfterFilterCondition>
-      chalhuaniJsonContains(String value, {bool caseSensitive = true}) {
+      challhuaniJsonContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.contains(
-        property: r'chalhuaniJson',
+        property: r'challhuaniJson',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -304,10 +304,10 @@ extension ConfiguracionQueryFilter
   }
 
   QueryBuilder<Configuracion, Configuracion, QAfterFilterCondition>
-      chalhuaniJsonMatches(String pattern, {bool caseSensitive = true}) {
+      challhuaniJsonMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.matches(
-        property: r'chalhuaniJson',
+        property: r'challhuaniJson',
         wildcard: pattern,
         caseSensitive: caseSensitive,
       ));
@@ -315,20 +315,20 @@ extension ConfiguracionQueryFilter
   }
 
   QueryBuilder<Configuracion, Configuracion, QAfterFilterCondition>
-      chalhuaniJsonIsEmpty() {
+      challhuaniJsonIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'chalhuaniJson',
+        property: r'challhuaniJson',
         value: '',
       ));
     });
   }
 
   QueryBuilder<Configuracion, Configuracion, QAfterFilterCondition>
-      chalhuaniJsonIsNotEmpty() {
+      challhuaniJsonIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'chalhuaniJson',
+        property: r'challhuaniJson',
         value: '',
       ));
     });
@@ -670,16 +670,16 @@ extension ConfiguracionQueryLinks
 extension ConfiguracionQuerySortBy
     on QueryBuilder<Configuracion, Configuracion, QSortBy> {
   QueryBuilder<Configuracion, Configuracion, QAfterSortBy>
-      sortByChalhuaniJson() {
+      sortByChallhuaniJson() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'chalhuaniJson', Sort.asc);
+      return query.addSortBy(r'challhuaniJson', Sort.asc);
     });
   }
 
   QueryBuilder<Configuracion, Configuracion, QAfterSortBy>
-      sortByChalhuaniJsonDesc() {
+      sortByChallhuaniJsonDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'chalhuaniJson', Sort.desc);
+      return query.addSortBy(r'challhuaniJson', Sort.desc);
     });
   }
 
@@ -713,16 +713,16 @@ extension ConfiguracionQuerySortBy
 extension ConfiguracionQuerySortThenBy
     on QueryBuilder<Configuracion, Configuracion, QSortThenBy> {
   QueryBuilder<Configuracion, Configuracion, QAfterSortBy>
-      thenByChalhuaniJson() {
+      thenByChallhuaniJson() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'chalhuaniJson', Sort.asc);
+      return query.addSortBy(r'challhuaniJson', Sort.asc);
     });
   }
 
   QueryBuilder<Configuracion, Configuracion, QAfterSortBy>
-      thenByChalhuaniJsonDesc() {
+      thenByChallhuaniJsonDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'chalhuaniJson', Sort.desc);
+      return query.addSortBy(r'challhuaniJson', Sort.desc);
     });
   }
 
@@ -767,10 +767,10 @@ extension ConfiguracionQuerySortThenBy
 
 extension ConfiguracionQueryWhereDistinct
     on QueryBuilder<Configuracion, Configuracion, QDistinct> {
-  QueryBuilder<Configuracion, Configuracion, QDistinct> distinctByChalhuaniJson(
+  QueryBuilder<Configuracion, Configuracion, QDistinct> distinctByChallhuaniJson(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'chalhuaniJson',
+      return query.addDistinctBy(r'challhuaniJson',
           caseSensitive: caseSensitive);
     });
   }
@@ -800,9 +800,9 @@ extension ConfiguracionQueryProperty
   }
 
   QueryBuilder<Configuracion, String, QQueryOperations>
-      chalhuaniJsonProperty() {
+      challhuaniJsonProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'chalhuaniJson');
+      return query.addPropertyName(r'challhuaniJson');
     });
   }
 

@@ -7,7 +7,7 @@ class Snapshot {
   Id id = Isar.autoIncrement;
 
   @Index()
-  String zona; // Tambokarka o Chalhuani
+  String zona; // Tambokarka o Challhuani
 
   DateTime fecha;
   int cantidadParcelas;
