@@ -21,7 +21,9 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
     final ds = await BiomasaService.loadDataset();
     final byLugar = ds.asByLugar();
     final zl = widget.zona.toLowerCase();
-    final key = (zl.contains('challhuani') || zl.contains('challhuani')) ? 'challhuani' : 'tambokarka';
+    final key = (zl.contains('challhuani') || zl.contains('challhuani'))
+        ? 'challhuani'
+        : 'tambokarka';
     setState(() {
       _lugar = byLugar[key] ?? byLugar['tambokarka'];
     });
@@ -34,7 +36,7 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
   }
 
   void _calcular() {
-  final int cantidad = int.tryParse(_controller.text) ?? 0;
+    final int cantidad = int.tryParse(_controller.text) ?? 0;
     if (cantidad <= 0) {
       setState(() {
         _lastKpis = null;
@@ -58,7 +60,8 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
       'peso_fresco_m2_kg': l.freshWeightM2g / 1000.0, // g/m2 -> kg/m2
       'porcentaje_peso_seco': l.dryWeightPct / 100.0,
       'porcentaje_alimento_digerible': l.digestibleLeafPct / 100.0,
-      'requerimiento_diario_vicuna_kg': l.idmsKgMsDia, // IDMS como requerimiento diario
+      'requerimiento_diario_vicuna_kg':
+          l.idmsKgMsDia, // IDMS como requerimiento diario
       'dias_periodo': 30,
       'max_consumo_porcentaje': 0.30,
     };
@@ -76,7 +79,7 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
 
   @override
   Widget build(BuildContext context) {
-  // Sólo se mostrará el cálculo; no se listan datos del JSON
+    // Sólo se mostrará el cálculo; no se listan datos del JSON
 
     return Scaffold(
       appBar: AppBar(
@@ -90,28 +93,40 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
           children: [
             // No mostrar datos del JSON; sólo un pequeño indicador mientras carga
             if (_lugar == null)
-              const Center(child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: CircularProgressIndicator(),
-              )),
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
             const SizedBox(height: 8),
             // --- Inputs y Cálculo ---
             Card(
               elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Cantidad de Parcelas a Analizar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    const Text(
+                      'Cantidad de Parcelas a Analizar',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     TextField(
                       controller: _controller,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         hintText: 'Ingrese número de parcelas',
                         suffixIcon: const Icon(Icons.numbers),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 15),
@@ -125,34 +140,65 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
                           backgroundColor: Colors.indigo,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
                     ),
                     if (_message.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 10),
-                        child: Text(_message, style: TextStyle(color: _lastKpis != null ? Colors.blue : Colors.red, fontSize: 14)),
+                        child: Text(
+                          _message,
+                          style: TextStyle(
+                            color: _lastKpis != null ? Colors.blue : Colors.red,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
-                    
+
                     if (_lastKpis != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Resultados:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Resultados:',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             ListTile(
                               title: const Text('Fresh weight total (kg)'),
-                              trailing: Text('${_lastKpis!['fresh_weight_kg'].toStringAsFixed(3)} kg', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              trailing: Text(
+                                '${_lastKpis!['fresh_weight_kg'].toStringAsFixed(3)} kg',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                             ListTile(
                               title: const Text('Biomasa disponible (kg)'),
-                              trailing: Text('${_lastKpis!['biomasa_disponible_kg'].toStringAsFixed(3)} kg', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                              trailing: Text(
+                                '${_lastKpis!['biomasa_disponible_kg'].toStringAsFixed(3)} kg',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              ),
                             ),
                             ListTile(
                               title: const Text('Vicuñas Alimentadas (Entero)'),
-                              trailing: Text('${_lastKpis!['vicunas_alimentadas']}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                              trailing: Text(
+                                '${_lastKpis!['vicunas_alimentadas']}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -161,7 +207,7 @@ class _BiomasaScreenState extends State<BiomasaScreen> {
                 ),
               ),
             ),
-            
+
             // Se removieron parámetros e historial
           ],
         ),

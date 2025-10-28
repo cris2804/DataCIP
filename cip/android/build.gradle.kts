@@ -5,6 +5,25 @@ allprojects {
     }
 }
 
+// Asegurar compileSdk para módulos de plugins (librerías) y apps de terceros
+// (Debe ejecutarse temprano durante la configuración)
+subprojects {
+    // Para módulos tipo Library
+    plugins.withType(com.android.build.gradle.LibraryPlugin::class.java) {
+        extensions.configure<com.android.build.gradle.LibraryExtension>("android") {
+            @Suppress("DEPRECATION")
+            this.compileSdkVersion(34)
+        }
+    }
+    // Para módulos tipo Application (si existiesen en subproyectos)
+    plugins.withType(com.android.build.gradle.AppPlugin::class.java) {
+        extensions.configure<com.android.build.gradle.AppExtension>("android") {
+            @Suppress("DEPRECATION")
+            this.compileSdkVersion(34)
+        }
+    }
+}
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")
@@ -19,15 +38,11 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
-subprojects {
-    afterEvaluate {
-        if (plugins.hasPlugin("com.android.application") || plugins.hasPlugin("com.android.library")) {
-            the<com.android.build.gradle.BaseExtension>().apply {
-                compileSdkVersion(34)
-            }
-        }
-    }
-}
+// Nota: Evitamos usar afterEvaluate (incompatible con versiones recientes de Gradle/AGP)
+// Cada módulo Android (app y plugins) debe declarar su propio compileSdk.
+// Flutter ya inyecta compileSdk a través de `flutter.compileSdkVersion` en :app.
+
+ 
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)

@@ -6,15 +6,15 @@ part 'configuracion.g.dart';
 @collection
 class Configuracion {
   // Id fijo para que solo exista una fila de configuración global
-  Id isarId = 1; 
+  Id isarId = 1;
 
   // Configuración global
   String pin; // Pin de bloqueo (Ej: '1234')
 
   // Mapeo de configuraciones por zona
-  // Se usa Map<String, ConfigZona> si Isar lo soportara directamente, 
+  // Se usa Map<String, ConfigZona> si Isar lo soportara directamente,
   // pero para Isar, es mejor guardar la configuración serializada o en clases separadas.
-  
+
   // Simplificamos: Guardamos la configuración de ambas zonas juntas en JSON (string)
   String tambokarkaJson;
   String challhuaniJson;
@@ -35,4 +35,5 @@ class Configuracion {
     return {};
   }
 }
+
 // NOTA: Para usar json.decode/encode se requiere importar dart:convert

@@ -8,10 +8,20 @@ class Parcela {
   final Map<String, dynamic> properties;
   ParcelStatus status;
 
+  // Metadatos de monitoreo
+  DateTime? fecha;
+  String observacion;
+  String supervisor;
+  List<String> fotos; // rutas locales
+
   Parcela({
     required this.id,
     required this.polygon,
     required this.properties,
-    this.status = ParcelStatus.sinTratamiento, // Todas las parcelas inician como 'sin tratamiento'
+    this.status = ParcelStatus.sinTratamiento,
+    this.fecha,
+    this.observacion = '',
+    this.supervisor = '',
+    this.fotos = const [],
   });
 }

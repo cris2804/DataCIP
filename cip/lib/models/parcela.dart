@@ -7,7 +7,8 @@ part 'parcela.g.dart';
 class Parcela {
   // La clave (id) debe ser nullable (Id?) para usar autoIncrement
   // y debe ser un campo editable para que Isar lo maneje correctamente.
-  Id id = Isar.autoIncrement; // Usar Isar.autoIncrement para IDs válidos en la web
+  Id id =
+      Isar.autoIncrement; // Usar Isar.autoIncrement para IDs válidos en la web
 
   @Index(unique: true, replace: true)
   String parcelaId; // Ej: TBK_0001 (Usado como ID visible)
@@ -16,9 +17,9 @@ class Parcela {
   DateTime fechaEstado;
   String observaciones;
   List<String> fotos; // Rutas locales
-  
+
   // Coordenadas o GeoJSON (en una app real sería un String con el geojsonFeature)
-  String geojsonFeature; 
+  String geojsonFeature;
 
   Parcela({
     required this.parcelaId,

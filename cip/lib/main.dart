@@ -18,10 +18,14 @@ class PastoControlApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AppNavState()), // AppNavState primero
+        ChangeNotifierProvider(
+          create: (_) => AppNavState(),
+        ), // AppNavState primero
         ChangeNotifierProvider(
           create: (context) => ParcelaStateService()
-            ..loadDataForZone(context.read<AppNavState>().currentZone), // Carga datos iniciales
+            ..loadDataForZone(
+              context.read<AppNavState>().currentZone,
+            ), // Carga datos iniciales
         ),
       ],
       child: MaterialApp(
@@ -78,7 +82,10 @@ class MainScaffold extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PastoControl', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'PastoControl',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         centerTitle: false,
@@ -106,9 +113,15 @@ class MainScaffold extends StatelessWidget {
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Mapa'),
-          BottomNavigationBarItem(icon: Icon(Icons.calculate), label: 'Biomasa'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calculate),
+            label: 'Biomasa',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Config'),
         ],
       ),

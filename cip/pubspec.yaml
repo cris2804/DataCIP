@@ -31,6 +31,7 @@ dependencies:
   # ********************************
   proj4dart: ^2.1.0
   scrollable_positioned_list: ^0.3.8
+  image_picker: ^1.0.7
 
 dev_dependencies:
   flutter_test:
@@ -42,4 +43,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/data/ 
+    - assets/data/
+    # Imágenes locales
+    - assets/images/

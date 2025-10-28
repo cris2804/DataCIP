@@ -12,9 +12,12 @@ class ParcelaStateService extends ChangeNotifier {
   bool isLoading = true;
   String? error;
 
-  int get sinTratamientoCount => parcels.where((p) => p.status == ParcelStatus.sinTratamiento).length;
-  int get enTratamientoCount => parcels.where((p) => p.status == ParcelStatus.enTratamiento).length;
-  int get disponibleCount => parcels.where((p) => p.status == ParcelStatus.disponible).length;
+  int get sinTratamientoCount =>
+      parcels.where((p) => p.status == ParcelStatus.sinTratamiento).length;
+  int get enTratamientoCount =>
+      parcels.where((p) => p.status == ParcelStatus.enTratamiento).length;
+  int get disponibleCount =>
+      parcels.where((p) => p.status == ParcelStatus.disponible).length;
 
   Future<void> loadDataForZone(String zone) async {
     try {
@@ -34,15 +37,18 @@ class ParcelaStateService extends ChangeNotifier {
 
       final projSrc = proj4.Projection.add(
         'EPSG:32719',
-        '+proj=utm +zone=19 +south +ellps=WGS84 +datum=WGS84 +units=m +no_defs'
+        '+proj=utm +zone=19 +south +ellps=WGS84 +datum=WGS84 +units=m +no_defs',
       );
       final projDst = proj4.Projection.get('EPSG:4326')!;
 
       final boundaryRaw = await rootBundle.loadString(boundaryAsset);
       final boundaryData = jsonDecode(boundaryRaw);
       final boundaryFeature = boundaryData['features'][0];
-      final boundaryCoords = boundaryFeature['geometry']['coordinates'][0] as List;
-      final boundaryPoints = boundaryCoords.map((p) => LatLng(p[1], p[0])).toList();
+      final boundaryCoords =
+          boundaryFeature['geometry']['coordinates'][0] as List;
+      final boundaryPoints = boundaryCoords
+          .map((p) => LatLng(p[1], p[0]))
+          .toList();
       boundary = Polygon(
         points: boundaryPoints,
         borderColor: Colors.red.shade700,
@@ -58,32 +64,40 @@ class ParcelaStateService extends ChangeNotifier {
       for (var feature in parcelFeatures) {
         final properties = feature['properties'] as Map<String, dynamic>;
         final id = properties['FID'].toString();
-        
+
         var coords = feature['geometry']['coordinates'][0] as List;
-        if (coords.isNotEmpty && coords[0] is List && (coords[0] as List).isNotEmpty && (coords[0] as List)[0] is List) {
+        if (coords.isNotEmpty &&
+            coords[0] is List &&
+            (coords[0] as List).isNotEmpty &&
+            (coords[0] as List)[0] is List) {
           coords = coords[0] as List;
         }
-        
+
         final List<LatLng> parcelPoints = [];
         for (var p in coords) {
           if (p is List && p.length >= 2 && p[0] is num && p[1] is num) {
-            final point = proj4.Point(x: (p[0] as num).toDouble(), y: (p[1] as num).toDouble());
+            final point = proj4.Point(
+              x: (p[0] as num).toDouble(),
+              y: (p[1] as num).toDouble(),
+            );
             final wgs84Point = projSrc.transform(projDst, point);
             parcelPoints.add(LatLng(wgs84Point.y, wgs84Point.x));
           }
         }
 
         if (parcelPoints.isNotEmpty) {
-          loadedParcels.add(Parcela(
-            id: id,
-            properties: properties,
-            polygon: Polygon(
-              points: parcelPoints,
-              borderColor: Colors.blue.shade800,
-              color: Colors.blue.withOpacity(0.25),
-              borderStrokeWidth: 1.0,
+          loadedParcels.add(
+            Parcela(
+              id: id,
+              properties: properties,
+              polygon: Polygon(
+                points: parcelPoints,
+                borderColor: Colors.blue.shade800,
+                color: Colors.blue.withOpacity(0.25),
+                borderStrokeWidth: 1.0,
+              ),
             ),
-          ));
+          );
         }
       }
       parcels = loadedParcels;
@@ -103,5 +117,27 @@ class ParcelaStateService extends ChangeNotifier {
       parcels[index].status = newStatus;
       notifyListeners();
     }
+  }
+
+  // Actualiza metadatos de una parcela (fecha, observación, supervisor, fotos) y opcionalmente el estado
+  void updateParcelData({
+    required String parcelId,
+    ParcelStatus? status,
+    DateTime? fecha,
+    String? observacion,
+    String? supervisor,
+    List<String>? fotosAppend,
+  }) {
+    final index = parcels.indexWhere((p) => p.id == parcelId);
+    if (index == -1) return;
+    final p = parcels[index];
+    if (status != null) p.status = status;
+    if (fecha != null) p.fecha = fecha;
+    if (observacion != null) p.observacion = observacion;
+    if (supervisor != null) p.supervisor = supervisor;
+    if (fotosAppend != null && fotosAppend.isNotEmpty) {
+      p.fotos = [...p.fotos, ...fotosAppend];
+    }
+    notifyListeners();
   }
 }
